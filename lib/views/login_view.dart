@@ -1,5 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:privnotes/constants/routes.dart';
+
+import '../utilities/show_error_dialog.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({Key? key}) : super(key: key);
@@ -61,12 +64,40 @@ class _LoginViewState extends State<LoginView> {
                     .signInWithEmailAndPassword(
                         email: email, password: password);
                 print(userCredential);
+                if (userCredential.user?.emailVerified == true) {
+                  Navigator.of(context)
+                      .pushNamedAndRemoveUntil(notesRoute, (route) => false);
+                } else {
+                  // Navigator.of(context).pushNamedAndRemoveUntil(
+                  //     verifyEmailRoute, (route) => false);
+                  final shoulVerifuEmail = await showEmailVerifyDialog(context);
+                  if (shoulVerifuEmail) {
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                        verifyEmailRoute, (_) => false);
+                  }
+                }
               } on FirebaseAuthException catch (e) {
                 if (e.code == "user-not-found") {
-                  print("User Not Found");
+                  await showErrorDialog(
+                    context,
+                    "User Not Found",
+                  );
                 } else if (e.code == "wrong-password") {
-                  print("Wrong Password");
+                  await showErrorDialog(
+                    context,
+                    "Wrong Password",
+                  );
+                } else {
+                  await showErrorDialog(
+                    context,
+                    "Error: $e.code",
+                  );
                 }
+              } catch (e) {
+                await showErrorDialog(
+                  context,
+                  e.toString(),
+                );
               }
             },
             child: const Text('Login'),
@@ -74,7 +105,7 @@ class _LoginViewState extends State<LoginView> {
           TextButton(
             onPressed: () {
               Navigator.of(context)
-                  .pushNamedAndRemoveUntil("/register/", (route) => false);
+                  .pushNamedAndRemoveUntil(registerRoute, (route) => false);
             },
             child: const Text("Create New Account"),
           )
@@ -82,4 +113,25 @@ class _LoginViewState extends State<LoginView> {
       ),
     );
   }
+}
+
+Future<bool> showEmailVerifyDialog(BuildContext context) {
+  return showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Verify Email"),
+        content: const Text("Please verify your email first"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context)
+                  .pushNamedAndRemoveUntil(verifyEmailRoute, (route) => false);
+            },
+            child: const Text("Go to verify"),
+          ),
+        ],
+      );
+    },
+  ).then((value) => value ?? false);
 }

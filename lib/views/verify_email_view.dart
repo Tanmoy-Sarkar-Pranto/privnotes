@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:privnotes/constants/routes.dart';
 
 class EmailVerifyView extends StatefulWidget {
   const EmailVerifyView({Key? key}) : super(key: key);
@@ -24,6 +25,13 @@ class _EmailVerifyViewState extends State<EmailVerifyView> {
               await user?.sendEmailVerification();
             },
             child: const Text("Send E-Mail Verification"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context)
+                  .pushNamedAndRemoveUntil(loginRoute, (route) => false);
+            },
+            child: const Text("Go back to login page"),
           ),
         ],
       ),
