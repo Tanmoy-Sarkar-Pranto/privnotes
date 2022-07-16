@@ -63,7 +63,6 @@ class _RegisterViewState extends State<RegisterView> {
                   email: email,
                   password: password,
                 );
-                AuthService.firebase().sendEmailVerification();
                 Navigator.of(context).pushNamed(verifyEmailRoute);
               } on EmailAlreadyInUseAuthException catch (_) {
                 await showErrorDialog(context, "email already in use");
