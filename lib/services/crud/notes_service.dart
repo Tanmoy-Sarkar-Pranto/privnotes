@@ -13,11 +13,16 @@ class NotesService {
   List<DatabaseNote> _notes = [];
 
   static final NotesService _shared = NotesService._sharedInstance();
-  NotesService._sharedInstance();
+  NotesService._sharedInstance() {
+    _noteStreamsController = StreamController<List<DatabaseNote>>.broadcast(
+      onListen: () {
+        _noteStreamsController.sink.add(_notes);
+      },
+    );
+  }
   factory NotesService() => _shared;
 
-  final _noteStreamsController =
-      StreamController<List<DatabaseNote>>.broadcast();
+  late final StreamController<List<DatabaseNote>> _noteStreamsController;
 
   Stream<List<DatabaseNote>> get allNotes => _noteStreamsController.stream;
 
@@ -187,10 +192,15 @@ class NotesService {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
     await getNote(id: note.id);
-    final updatesCount = await db.update(noteTable, {
-      textColumn: text,
-      isSyncedWithCloudColumn: 0,
-    });
+    final updatesCount = await db.update(
+      noteTable,
+      {
+        textColumn: text,
+        isSyncedWithCloudColumn: 0,
+      },
+      where: 'id = ?',
+      whereArgs: [note.id],
+    );
 
     if (updatesCount == 0) {
       throw CouldNotUpdateNoteException();
@@ -267,7 +277,7 @@ class DatabaseUser {
 
 class DatabaseNote {
   final int id;
-  final int userId;
+  final int? userId;
   final String text;
   final bool isSyncedWithCloud;
 
@@ -280,7 +290,7 @@ class DatabaseNote {
 
   DatabaseNote.fromRow(Map<String, Object?> map)
       : id = map[idColumn] as int,
-        userId = map[emailColumn] as int,
+        userId = map[userIdColumn] as int,
         text = map[textColumn] as String,
         isSyncedWithCloud =
             (map[isSyncedWithCloudColumn] as int) == 1 ? true : false;
@@ -319,3 +329,4 @@ const createNoteTable = '''CREATE TABLE IF NOT EXISTS "note" (
 	          FOREIGN KEY("user_id") REFERENCES "user"("id")
       );
       ''';
+// const deleteNoteTable =
