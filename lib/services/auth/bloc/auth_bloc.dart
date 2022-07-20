@@ -4,10 +4,11 @@ import 'package:privnotes/services/auth/bloc/auth_event.dart';
 import 'package:privnotes/services/auth/bloc/auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc(AuthProvider provider) : super(const AuthStateUninitialized()) {
+  AuthBloc(AuthProvider provider)
+      : super(const AuthStateUninitialized(isLoading: true)) {
     // on<AuthEventShouldRegister>((event, emit) {
     //
-    // });ptanoy
+    // });
 
     on<AuthEventSendEmailVerification>((event, emit) async {
       await provider.sendEmailVerification();
@@ -24,10 +25,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
         await provider.sendEmailVerification();
         emit(
-          const AuthStateNeedsVerification(),
+          const AuthStateNeedsVerification(isLoading: false),
         );
       } on Exception catch (e) {
-        emit(AuthStateRegistering(e, false));
+        emit(AuthStateRegistering(exception: e, isLoading: false));
       }
     });
 
@@ -42,9 +43,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           ),
         );
       } else if (!user.isEmailVerified) {
-        emit(const AuthStateNeedsVerification());
+        emit(const AuthStateNeedsVerification(isLoading: false));
       } else {
-        emit(AuthStateLoggedIn(user));
+        emit(AuthStateLoggedIn(user: user, isLoading: false));
       }
     });
     on<AuthEventLogIn>((event, emit) async {
@@ -52,6 +53,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         const AuthStateLoggedOut(
           exception: null,
           isLoading: true,
+          loadingText: 'Please wait a moment',
         ),
       );
       final email = event.email;
@@ -69,7 +71,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             ),
           );
           emit(
-            const AuthStateNeedsVerification(),
+            const AuthStateNeedsVerification(isLoading: false),
           );
         } else {
           emit(
@@ -78,7 +80,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
               isLoading: false,
             ),
           );
-          emit(AuthStateLoggedIn(user));
+          emit(AuthStateLoggedIn(user: user, isLoading: false));
         }
       } on Exception catch (e) {
         emit(
@@ -108,7 +110,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
     });
     on<AuthEventShouldRegister>((event, emit) {
-      emit(const AuthStateRegistering(null, false));
+      emit(const AuthStateRegistering(
+        exception: null,
+        isLoading: false,
+      ));
     });
   }
 }
